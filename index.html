@@ -215,7 +215,7 @@ const COLS_PNIM_DEF=['hada','tzevet-pnim','tet','yod','yoda','yodb','akademia','
 const COLS_BS_DEF=['tzevet-bs','tet','yod','yoda','yodb','bs','kfar'];
 const COL_LABELS={hada:'חד"א','tzevet-pnim':'צוות פנימייה',tet:'שכבת ט',yod:'שכבת י',yoda:'שכבת יא',yodb:'שכבת יב',akademia:'אקדמיה',naale:'נעל"ה',pnimiyd:'פנימייה',kfar:'כפר','tzevet-bs':'צוות ביה"ס',bs:'בית ספר'};
 
-const PNIM_URL='https://docs.google.com/spreadsheets/d/1C460C7RV0wfB483BwBxHbQO9-fT7VmoNzJ63PORNTSE/gviz/tq?tqx=out:json';
+const PNIM_URL='https://docs.google.com/spreadsheets/d/1I7vQ3DJQAQEt8MOF693r0z_aJ8d-OBoy0rDjms4-i4I/gviz/tq?tqx=out:json&t='+Date.now();
 const BS_URL='https://docs.google.com/spreadsheets/d/1FI-0x8baQ7Ztm0O4oYUbGDAuw2sQ1sHdbHmZlJuwG-0/gviz/tq?tqx=out:json';
 const COLS_PNIM_SRC=['hada','tzevet-pnim','tet','yod','yoda','yodb','akademia','naale','pnimiyd','kfar'];
 const COLS_BS_SRC=['tzevet-bs','tet','yod','yoda','yodb','bs','kfar'];
@@ -317,14 +317,14 @@ function parseDateCell(cell){
   if(!cell) return null;
   const v = cell.v;
   const f = cell.f || '';
-  // gviz Date object
+  // עדיפות לערך המעוצב DD/MM/YYYY — מדויק יותר מ-Date object
+  const dm = f.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(dm) return new Date(+dm[3], +dm[2]-1, +dm[1]);
+  // gviz Date string
   if(typeof v === 'string' && v.startsWith('Date(')){
     const m = v.match(/Date\((\d+),(\d+),(\d+)/);
     if(m) return new Date(+m[1], +m[2], +m[3]);
   }
-  // formatted string DD/MM/YYYY
-  const dm = f.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(dm) return new Date(+dm[3], +dm[2]-1, +dm[1]);
   const dm2 = String(v||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if(dm2) return new Date(+dm2[3], +dm2[2]-1, +dm2[1]);
   return null;
@@ -365,23 +365,22 @@ function parseSheetRows(rows, src){
     const row=rows[ri];
     if(!row.c) continue;
 
-    const firstVal = row.c[0]?.v ? String(row.c[0].v).trim() : '';
+    const firstVal = row.c[0] ? String(row.c[0].v||'').trim() : '';
 
     // שורת כותרות ימים — דלג
     if(!firstVal){
-      const second = row.c[1]?.f || row.c[1]?.v || '';
-      if(['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'].some(d=>String(second).includes(d))) continue;
+      const second = row.c[1] ? String(row.c[1].f||row.c[1].v||'') : '';
+      if(['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'].some(d=>second.includes(d))) continue;
     }
 
     // שורת תאריכים — תא ראשון ריק, תא שני הוא תאריך
     if(!firstVal){
-      const d = parseDateCell(row.c[1]);
+      const d=parseDateCell(row.c[1]);
       if(d){
         currentDates=[];
         // תאריכים ב-1,3,5,7,9,11,13
-        for(let ci=1; ci<row.c.length; ci+=2){
-          const dt=parseDateCell(row.c[ci]);
-          currentDates.push(dt||null);
+        for(let ci=1; ci<=13; ci+=2){
+          currentDates.push(parseDateCell(row.c[ci])||null);
         }
       }
       continue;
@@ -392,28 +391,30 @@ function parseSheetRows(rows, src){
     const rowName=firstVal;
     const col=COL_MAP[rowName]||'kfar';
 
-    // קטגוריה — index 16 קבוע
-    let catTxt='';
-    if(row.c.length>16 && row.c[16]?.v){
-      catTxt=String(row.c[16].v).trim();
-    }
-    const cat=detectCatFromText(catTxt,src);
+    // קטגוריה ברירת מחדל לשורה — index 16 (legend)
+    const rowCatTxt = row.c[16]?.v ? String(row.c[16].v).trim() : '';
 
-    // תוכן — ב-2,4,6,8,10,12,14 (תאריך index + 1)
-    for(let di=0; di<currentDates.length; di++){
+    // תוכן ב-2,4,6,8,10,12,14 וקטגוריה לכל יום ב-1,3,5,7,9,11,13
+    for(let di=0; di<7; di++){
       const date=currentDates[di];
       if(!date) continue;
 
-      const contentIdx = 1 + di*2 + 1; // = 2,4,6,8...
+      const catIdx    = 1 + di*2; // קטגוריה לכל יום
+      const contentIdx= 2 + di*2; // תוכן
       if(contentIdx>=row.c.length) continue;
 
       const contentVal=getCellVal(row.c[contentIdx]);
       if(!contentVal) continue;
 
-      // חלץ שעה מתוך הטקסט אם כתוב "09:00 שם האירוע"
+      // קטגוריה: קודם לפי תא ספציפי, אחר כך לפי legend השורה
+      const cellCat = row.c[catIdx]?.v ? String(row.c[catIdx].v).trim() : '';
+      const catTxt = KNOWN_CATS.includes(cellCat) ? cellCat : rowCatTxt;
+      const cat=detectCatFromText(catTxt,src);
+
+      // שעה מתוך הטקסט
       let time=null, title=contentVal;
-      const timeMatch=contentVal.match(/^(\d{1,2}:\d{2}(?:-\d{1,2}:\d{2})?)\s+(.*)/);
-      if(timeMatch){time=timeMatch[1];title=timeMatch[2];}
+      const tm=contentVal.match(/^(\d{1,2}:\d{2}(?:-\d{1,2}:\d{2})?)\s+(.*)/);
+      if(tm){time=tm[1];title=tm[2];}
 
       evs.push({date:fd(date),title,time,src,cat,col});
     }
