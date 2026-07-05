@@ -283,6 +283,119 @@ function parseRows(rows,cols,src){
   return evs;
 }
 
+// מיפוי קטגוריות לפי טקסט
+function detectCatFromText(txt, src){
+  if(!txt) return src==='pnim'?'in-pnim':'in-bs';
+  if(txt.includes('חוץ')&&src==='pnim') return 'out-pnim';
+  if(txt.includes('פנים')&&src==='pnim') return 'in-pnim';
+  if(txt.includes('צוות')&&src==='pnim') return 'tzevet-pnim';
+  if(txt.includes('טיול')&&src==='pnim') return 'tiyul-pnim';
+  if(txt.includes('חוץ')&&src==='bs') return 'out-bs';
+  if(txt.includes('פנים')&&src==='bs') return 'in-bs';
+  if(txt.includes('בגרות')||txt.includes('מתכונת')) return 'bagrut';
+  if(txt.includes('טיול')&&src==='bs') return 'tiyul-bs';
+  if(txt.includes('בחינות')) return 'bhinot';
+  if(txt.includes('צוות')&&src==='bs') return 'tzevet-bs';
+  return src==='pnim'?'in-pnim':'in-bs';
+}
+
+function parseSheetRows(rows, src){
+  const evs=[];
+  // מבנה השיט: שורת ימים, שורת תאריכים, ואז שורות תוכן
+  // כל יום = שתי עמודות (שעה + תוכן), עמודה אחרונה = קטגוריה
+  // שורות כותרות מזוהות ע"י שהתא הראשון ריק והתא השני מכיל שם יום
+  
+  let currentDates = []; // תאריכים לשבוע הנוכחי
+  
+  for(let ri=0; ri<rows.length; ri++){
+    const row = rows[ri];
+    if(!row.c || row.c.length===0) continue;
+    
+    const firstCell = row.c[0]?.v || row.c[0]?.f || '';
+    const firstStr = String(firstCell).trim();
+    
+    // זיהוי שורת תאריכים: התא הראשון ריק, התא השני מכיל תאריך בפורמט DD/MM/YYYY
+    const secondCell = row.c[1]?.v || row.c[1]?.f || '';
+    const secondStr = String(secondCell).trim();
+    const isDateRow = !firstStr && secondStr.match(/^\d{2}\/\d{2}\/\d{4}$/);
+    
+    if(isDateRow){
+      // קרא את כל התאריכים מהשורה
+      // עמודות: 0=ריק, 1,2=יום1, 3,4=יום2, ..., -2=ריק, -1=קטגוריה
+      currentDates = [];
+      // כל זוג עמודות = יום אחד (מ-index 1 עד length-3, כל 2)
+      for(let ci=1; ci<row.c.length-2; ci+=2){
+        const cell = row.c[ci];
+        const dateStr = String(cell?.v || cell?.f || '').trim();
+        if(dateStr.match(/^\d{2}\/\d{2}\/\d{4}$/)){
+          const [d,m,y] = dateStr.split('/');
+          currentDates.push(new Date(+y, +m-1, +d));
+        } else {
+          currentDates.push(null);
+        }
+      }
+      continue;
+    }
+    
+    // זיהוי שורת שמות ימים — דלג
+    const isHeaderRow = !firstStr && ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'].includes(secondStr);
+    if(isHeaderRow) continue;
+    
+    // שורת תוכן רגילה
+    if(!firstStr || !currentDates.length) continue;
+    
+    const rowName = firstStr; // שם העמודה (חד"א, שכבת ט...)
+    // עמודה אחרונה = קטגוריה
+    const lastCell = row.c[row.c.length-1];
+    const catTxt = String(lastCell?.v || lastCell?.f || '').trim();
+    const cat = detectCatFromText(catTxt, src);
+    
+    // קרא תוכן לכל יום
+    // עמודות תוכן: index 1,2 = יום0, 3,4 = יום1, ...
+    for(let di=0; di<currentDates.length; di++){
+      const date = currentDates[di];
+      if(!date) continue;
+      
+      const timeIdx = 1 + di*2;
+      const contentIdx = 2 + di*2;
+      
+      if(timeIdx >= row.c.length-1) continue;
+      
+      const timeCell = row.c[timeIdx];
+      const contentCell = row.c[contentIdx];
+      
+      const timeVal = String(timeCell?.v || timeCell?.f || '').trim();
+      const contentVal = String(contentCell?.v || contentCell?.f || '').trim();
+      
+      if(!contentVal) continue;
+      
+      // נקה תוכן מ-[merged] אם יש
+      const cleanContent = contentVal.replace(/\[merged\]/g,'').trim();
+      if(!cleanContent) continue;
+      
+      // נקה שעה
+      const cleanTime = timeVal.replace(/\[merged\]/g,'').trim() || null;
+      
+      // מפה שם שורה לשם עמודה
+      const colMap = {
+        'חד"א':'hada','צוות פנימייה':'tzevet-pnim','שכבת ט':'tet',
+        'שכבת י':'yod','שכבת יא':'yoda','שכבת יב':'yodb',
+        'אקדמיה':'akademia','נעל"ה':'naale','פנימייה':'pnimiyd','כפר':'kfar',
+        'צוות בית ספר':'tzevet-bs','בית ספר':'bs'
+      };
+      const col = colMap[rowName] || rowName;
+      
+      evs.push({
+        date: fd(date),
+        title: cleanContent,
+        time: cleanTime,
+        src, cat, col
+      });
+    }
+  }
+  return evs;
+}
+
 async function loadData(){
   const calEl=document.getElementById('cal');
   calEl.innerHTML='<div style="text-align:center;padding:2rem;color:#3a7d44;font-size:14px">טוען נתונים מהשיטים...</div>';
@@ -293,12 +406,16 @@ async function loadData(){
     ]);
     const d1=parseGviz(r1),d2=parseGviz(r2);
     EVENTS=[];
-    if(d1.table?.rows)EVENTS.push(...parseRows(d1.table.rows,COLS_PNIM_SRC,'pnim'));
-    if(d2.table?.rows)EVENTS.push(...parseRows(d2.table.rows,COLS_BS_SRC,'bs'));
+    if(d1.table?.rows) EVENTS.push(...parseSheetRows(d1.table.rows,'pnim'));
+    if(d2.table?.rows) EVENTS.push(...parseSheetRows(d2.table.rows,'bs'));
     dataLoaded=true;
+    if(EVENTS.length===0){
+      calEl.innerHTML='<div style="text-align:center;padding:2rem;color:#7a9a7a;font-size:13px">השיטים נטענו אך לא נמצאו אירועים.<br>ודאי שהוספת תוכן לשיטים.</div>';
+      return;
+    }
     render();
   }catch(e){
-    calEl.innerHTML='<div style="text-align:center;padding:1.5rem;color:#c62828;background:#ffebee;border-radius:8px;margin:1rem;font-size:13px">שגיאה בטעינת הנתונים.<br>יש לוודא שהשיטים פומביים (כל מי שיש קישור יכול לצפות).<br><small>'+e.message+'</small></div>';
+    calEl.innerHTML='<div style="text-align:center;padding:1.5rem;color:#c62828;background:#ffebee;border-radius:8px;margin:1rem;font-size:13px">שגיאה בטעינת הנתונים.<br>יש לוודא שהשיטים פומביים.<br><small>'+e.message+'</small></div>';
   }
 }
 
