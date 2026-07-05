@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>לו"ז כפרי תשפ"ז</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;direction:rtl;background:#f4f8f4;color:#1a2e1a;min-height:100vh}
+
+/* HEADER - fresh green */
+.hdr{background:#3a7d44;padding:0.85rem 1.4rem;display:flex;align-items:center;gap:1rem;box-shadow:0 2px 10px rgba(58,125,68,0.25)}
+.logo-box{background:white;border-radius:8px;padding:4px 10px;display:flex;align-items:center;flex-shrink:0}
+.logo-box img{height:50px;width:auto;display:block}
+.hdr-text h1{color:#fff;font-size:1.2rem;font-weight:600}
+.hdr-text p{color:rgba(255,255,255,0.75);font-size:0.75rem;margin-top:2px}
+
+/* DEMO BAR */
+.demo-bar{background:#e8f5e9;border-bottom:1px solid #c8e6c9;padding:5px 1rem;font-size:11px;color:#2e7d32;text-align:center}
+
+/* CONTROLS */
+.ctrl{background:#fff;padding:0.6rem 1.2rem;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;border-bottom:1px solid #e0eee0;position:sticky;top:0;z-index:20;box-shadow:0 2px 6px rgba(58,125,68,0.08)}
+.vbtns{display:flex;gap:2px;background:#edf5ed;border-radius:8px;padding:3px}
+.vb{padding:5px 12px;border:none;background:transparent;border-radius:6px;cursor:pointer;font-size:12px;color:#4a7a4a;font-family:inherit;transition:all .15s;font-weight:500}
+.vb.active{background:#3a7d44;color:#fff;box-shadow:0 1px 4px rgba(58,125,68,0.3)}
+.narea{display:flex;gap:4px;align-items:center}
+.nb{padding:5px 11px;border:1px solid #c8e0c8;background:#fff;border-radius:7px;cursor:pointer;font-size:14px;color:#2a5a2a;transition:background .12s;font-family:inherit}
+.nb:hover{background:#edf5ed}
+#plabel{font-size:13px;font-weight:600;color:#1a3a1a;min-width:150px;text-align:center}
+.sp{flex:1}
+.today-btn{padding:5px 12px;border:1.5px solid #3a7d44;background:transparent;border-radius:7px;cursor:pointer;font-size:12px;color:#3a7d44;font-weight:600;font-family:inherit;transition:all .12s}
+.today-btn:hover{background:#3a7d44;color:#fff}
+
+/* FILTERS */
+.filters{background:#fafffe;padding:0.7rem 1.2rem;border-bottom:1px solid #e0eee0}
+.filter-row{display:flex;gap:1rem;flex-wrap:wrap}
+.filter-col{flex:1;min-width:200px}
+.fcol-hdr{display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-bottom:5px;border-bottom:2px solid}
+.fcol-hdr.pnim{border-color:#3a7d44}
+.fcol-hdr.bs{border-color:#1565c0}
+.fcol-dot{width:9px;height:9px;border-radius:50%}
+.fcol-lbl{font-size:12px;font-weight:600}
+.fcol-toggle{margin-right:auto;font-size:10px;color:#7a9a7a;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;cursor:pointer;border:1.5px solid transparent;transition:all .12s;user-select:none;opacity:0.45}
+.chip.on{opacity:1;border-color:currentColor}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.col-sec{border-top:1px solid #e8f0e8;padding-top:5px;margin-top:4px}
+.col-lbl-txt{font-size:10px;color:#7a9a7a;margin-bottom:3px}
+.cc{display:inline-flex;padding:2px 7px;border-radius:4px;font-size:10px;cursor:pointer;border:1px solid #d0e4d0;background:#fff;color:#4a6a4a;transition:all .12s;user-select:none;margin:0 2px 2px 0}
+.cc.on{background:#3a7d44;color:#fff;border-color:#3a7d44}
+
+/* CALENDAR */
+.cal{padding:0.7rem 1rem}
+
+/* WEEK */
+.wk-wrap{overflow-x:auto}
+.wk-hdr{display:grid;gap:3px;margin-bottom:3px;min-width:0}
+.wk-body{display:grid;gap:3px;min-width:0}
+.whc{text-align:center;font-size:11px;color:#6a8a6a;padding:4px;font-weight:500;border-radius:6px}
+.whc span{display:block;font-size:14px;color:#1a3a1a;font-weight:600;margin-top:1px}
+.whc.tod{background:#e8f5e8}
+.whc.tod span{color:#3a7d44}
+.timecol{font-size:9px;color:#aac8aa;padding-top:4px;text-align:center}
+.dc{background:#fff;border:1px solid #e0eee0;border-radius:10px;padding:5px;min-height:100px;transition:border .12s,box-shadow .12s;cursor:pointer}
+.dc:hover{border-color:#3a7d44;box-shadow:0 2px 8px rgba(58,125,68,0.12)}
+.dc.tod{border-color:#3a7d44;background:#f4fbf4}
+.dheb{font-size:9px;color:#9ab89a;margin-bottom:3px;text-align:center}
+.ep{border-radius:5px;padding:3px 5px;font-size:10px;margin-bottom:2px;line-height:1.35;word-break:break-word;border-right:2px solid transparent}
+.ep .et{font-size:9px;font-weight:700;display:block;margin-bottom:1px;opacity:0.85}
+.nodot{font-size:10px;color:#ddd;text-align:center;padding:8px 0}
+
+/* MONTH */
+.mo-hdr{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px}
+.mhc{text-align:center;font-size:11px;color:#6a8a6a;font-weight:500;padding:3px}
+.mo-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.mc{background:#fff;border:1px solid #e0eee0;border-radius:9px;padding:4px;min-height:75px;cursor:pointer;transition:all .12s}
+.mc:hover{border-color:#3a7d44;box-shadow:0 2px 6px rgba(58,125,68,0.1)}
+.mc.tod{border-color:#3a7d44;background:#f4fbf4}
+.mc.oth{opacity:0.28;pointer-events:none}
+.dnum{font-size:11px;color:#7a9a7a;margin-bottom:2px;display:flex;justify-content:space-between;align-items:baseline}
+.dhv{font-size:9px;color:#b8d0b8}
+.more{font-size:9px;color:#7a9a7a;margin-top:1px}
+
+/* YEAR */
+.yr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:700px){.yr-grid{grid-template-columns:repeat(2,1fr)}}
+.ym{background:#fff;border:1px solid #e0eee0;border-radius:9px;padding:8px}
+.ymt{font-size:12px;font-weight:600;color:#2a5a2a;margin-bottom:5px;text-align:center}
+.mgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.mch{font-size:8px;color:#b0c8b0;text-align:center;padding:1px}
+.mcl{font-size:9px;text-align:center;padding:2px 1px;border-radius:3px;color:#6a8a6a;cursor:pointer;transition:background .1s}
+.mcl:hover{background:#edf5ed}
+.mcl.ev{background:#d4edda;color:#1a5a2a}
+.mcl.ev:hover{background:#c4e0ca}
+.mcl.td{background:#3a7d44;color:#fff;border-radius:50%}
+
+/* DAY VIEW */
+.day-hdr-box{background:#fff;border:1px solid #e0eee0;border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.dhd{font-size:15px;font-weight:600;color:#1a3a1a}
+.dhd-heb{font-size:11px;color:#7a9a7a;margin-top:2px}
+.dhd-cnt{font-size:12px;color:#3a7d44;font-weight:600}
+.day-timeline{display:flex;flex-direction:column;gap:5px}
+.dev{background:#fff;border:1px solid #e0eee0;border-radius:10px;padding:9px 13px;border-right:4px solid transparent;display:flex;gap:10px;align-items:flex-start}
+.dev-time{font-size:12px;font-weight:700;color:#4a6a4a;min-width:75px;flex-shrink:0;padding-top:1px}
+.dev-body{flex:1}
+.dev-title{font-size:13px;font-weight:500;color:#1a2e1a;margin-bottom:4px}
+.dev-meta{font-size:10px;color:#7a9a7a;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.dev-cat{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px}
+.day-empty{text-align:center;padding:3rem;color:#9ab89a;font-size:14px}
+
+/* MOBILE */
+@media(max-width:600px){
+  .hdr{padding:0.7rem 0.8rem}
+  .hdr-text h1{font-size:1rem}
+  .ctrl{padding:0.5rem 0.7rem;gap:0.3rem}
+  .vb{padding:4px 8px;font-size:11px}
+  .nb{padding:4px 8px;font-size:12px}
+  #plabel{min-width:100px;font-size:12px}
+  .filters{padding:0.5rem 0.7rem}
+  .filter-row{flex-direction:column;gap:0.6rem}
+  .cal{padding:0.5rem 0.5rem}
+  .yr-grid{grid-template-columns:repeat(2,1fr);gap:5px}
+  .mo-hdr,.mo-grid{grid-template-columns:repeat(7,1fr)}
+  .mc{min-height:52px;padding:3px}
+  .mhc{font-size:9px;padding:2px}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo-box">
+    <img id="logo-img" alt="לוגו כפר עיינות נעמת">
+  </div>
+  <div class="hdr-text">
+    <h1>לו"ז כפרי לשנת תשפ"ז</h1>
+    <p>לוח שנה מרכזי — פנימייה ובית ספר</p>
+  </div>
+</div>
+
+<div class="demo-bar">מתעדכן אוטומטית מהשיטים | לחץ על יום לפרטים</div>
+
+<div class="ctrl">
+  <div class="vbtns">
+    <button class="vb" onclick="setView('day',this)">יומי</button>
+    <button class="vb active" onclick="setView('week',this)">שבועי</button>
+    <button class="vb" onclick="setView('month',this)">חודשי</button>
+    <button class="vb" onclick="setView('year',this)">שנתי</button>
+  </div>
+  <div class="narea">
+    <button class="nb" onclick="navPrev()">›</button>
+    <span id="plabel"></span>
+    <button class="nb" onclick="navNext()">‹</button>
+  </div>
+  <div class="sp"></div>
+  <button class="today-btn" onclick="goToday()">היום</button>
+</div>
+
+<div class="filters">
+  <div class="filter-row">
+    <div class="filter-col">
+      <div class="fcol-hdr pnim">
+        <div class="fcol-dot" style="background:#3a7d44"></div>
+        <span class="fcol-lbl" style="color:#3a7d44">🏠 פנימייה</span>
+        <span class="fcol-toggle" onclick="toggleAll('pnim')">הכל / כלום</span>
+      </div>
+      <div class="chips" id="pnim-cats"></div>
+      <div class="col-sec">
+        <div class="col-lbl-txt">עמודות:</div>
+        <div id="pnim-cols"></div>
+      </div>
+    </div>
+    <div class="filter-col">
+      <div class="fcol-hdr bs">
+        <div class="fcol-dot" style="background:#1565c0"></div>
+        <span class="fcol-lbl" style="color:#1565c0">🏫 בית ספר</span>
+        <span class="fcol-toggle" onclick="toggleAll('bs')">הכל / כלום</span>
+      </div>
+      <div class="chips" id="bs-cats"></div>
+      <div class="col-sec">
+        <div class="col-lbl-txt">עמודות:</div>
+        <div id="bs-cols"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cal" id="cal"></div>
+
+<script>
+const LOGO_B64 = '';
+document.getElementById('logo-img').style.display='none';
+
+const DAY_NAMES=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+const DAY_SHORT=['א','ב','ג','ד','ה','ו','ש'];
+const MON_HEB=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+const CATS_PNIM={
+  'out-pnim':{bg:'#fff3e0',color:'#a04010',border:'#e07030',lbl:'פעילות חוץ'},
+  'in-pnim':{bg:'#e8f5e8',color:'#2a6010',border:'#4a9a2a',lbl:'פעילות פנים'},
+  'tzevet-pnim':{bg:'#e3f0ff',color:'#1a3a8a',border:'#4a70cc',lbl:'פעילות צוות'},
+  'tiyul-pnim':{bg:'#f3e8ff',color:'#5a1a8a',border:'#9a50cc',lbl:'טיול פנימייה'}
+};
+const CATS_BS={
+  'out-bs':{bg:'#fff8e0',color:'#7a5000',border:'#c09020',lbl:'פעילות חוץ'},
+  'in-bs':{bg:'#e0f4f8',color:'#005a6a',border:'#2090a0',lbl:'פעילות פנים'},
+  'bagrut':{bg:'#fce8f0',color:'#7a0a3a',border:'#cc3070',lbl:'בגרות/מתכונת'},
+  'tiyul-bs':{bg:'#eae8ff',color:'#2a1a7a',border:'#5040aa',lbl:'טיול בית ספר'},
+  'bhinot':{bg:'#fff0e0',color:'#7a2000',border:'#cc5010',lbl:'בחינות'},
+  'tzevet-bs':{bg:'#e0f5f0',color:'#004a3a',border:'#208070',lbl:'פעילות צוות'}
+};
+const ALL_CATS={...CATS_PNIM,...CATS_BS};
+const COLS_PNIM_DEF=['hada','tzevet-pnim','tet','yod','yoda','yodb','akademia','naale','pnimiyd','kfar'];
+const COLS_BS_DEF=['tzevet-bs','tet','yod','yoda','yodb','bs','kfar'];
+const COL_LABELS={hada:'חד"א','tzevet-pnim':'צוות פנימייה',tet:'שכבת ט',yod:'שכבת י',yoda:'שכבת יא',yodb:'שכבת יב',akademia:'אקדמיה',naale:'נעל"ה',pnimiyd:'פנימייה',kfar:'כפר','tzevet-bs':'צוות ביה"ס',bs:'בית ספר'};
+
+const PNIM_URL='https://docs.google.com/spreadsheets/d/1C460C7RV0wfB483BwBxHbQO9-fT7VmoNzJ63PORNTSE/gviz/tq?tqx=out:json';
+const BS_URL='https://docs.google.com/spreadsheets/d/1FI-0x8baQ7Ztm0O4oYUbGDAuw2sQ1sHdbHmZlJuwG-0/gviz/tq?tqx=out:json';
+const COLS_PNIM_SRC=['hada','tzevet-pnim','tet','yod','yoda','yodb','akademia','naale','pnimiyd','kfar'];
+const COLS_BS_SRC=['tzevet-bs','tet','yod','yoda','yodb','bs','kfar'];
+
+let EVENTS=[];
+let dataLoaded=false;
+
+function parseGviz(raw){
+  const json=raw.replace(/^[\s\S]*?({[\s\S]*})\s*\)\s*;?\s*$/, '$1');
+  return JSON.parse(json);
+}
+
+function detectCat(s,src){
+  if(!s)return src==='pnim'?'in-pnim':'in-bs';
+  if(s.includes('חוץ')&&src==='pnim')return 'out-pnim';
+  if(s.includes('פנים')&&src==='pnim')return 'in-pnim';
+  if(s.includes('צוות')&&src==='pnim')return 'tzevet-pnim';
+  if(s.includes('טיול')&&src==='pnim')return 'tiyul-pnim';
+  if(s.includes('חוץ')&&src==='bs')return 'out-bs';
+  if(s.includes('פנים')&&src==='bs')return 'in-bs';
+  if(s.includes('בגרות')||s.includes('מתכונת'))return 'bagrut';
+  if(s.includes('טיול')&&src==='bs')return 'tiyul-bs';
+  if(s.includes('בחינות'))return 'bhinot';
+  if(s.includes('צוות')&&src==='bs')return 'tzevet-bs';
+  return src==='pnim'?'in-pnim':'in-bs';
+}
+
+function parseDate(v){
+  if(!v)return null;
+  const s=String(v);
+  // gviz Date format
+  const dm=s.match(/Date\((\d+),(\d+),(\d+)/);
+  if(dm)return new Date(+dm[1],+dm[2],+dm[3]);
+  // DD/MM/YYYY
+  const p=s.split(/[\/\.\-]/);
+  if(p.length===3){
+    let d=+p[0],m=+p[1]-1,y=+p[2];
+    if(y<100)y+=2000;
+    return new Date(y,m,d);
+  }
+  return null;
+}
+
+function parseRows(rows,cols,src){
+  const evs=[];
+  rows.forEach(row=>{
+    if(!row.c||!row.c[0])return;
+    const date=parseDate(row.c[0].v||row.c[0].f);
+    if(!date||isNaN(date))return;
+    const ds=fd(date);
+    const catRaw=row.c[1]?String(row.c[1].v||row.c[1].f||''):'';
+    const timeRaw=row.c[2]?String(row.c[2].v||row.c[2].f||''):'';
+    const time=timeRaw.trim()||null;
+    const cat=detectCat(catRaw,src);
+    for(let i=3;i<row.c.length&&i-3<cols.length;i++){
+      const cell=row.c[i];
+      if(!cell)continue;
+      const v=cell.v||cell.f;
+      if(!v)continue;
+      const txt=String(v).trim();
+      if(!txt)continue;
+      evs.push({date:ds,title:txt,time,src,cat,col:cols[i-3]});
+    }
+  });
+  return evs;
+}
+
+async function loadData(){
+  const calEl=document.getElementById('cal');
+  calEl.innerHTML='<div style="text-align:center;padding:2rem;color:#3a7d44;font-size:14px">טוען נתונים מהשיטים...</div>';
+  try{
+    const [r1,r2]=await Promise.all([
+      fetch(PNIM_URL).then(r=>r.text()),
+      fetch(BS_URL).then(r=>r.text())
+    ]);
+    const d1=parseGviz(r1),d2=parseGviz(r2);
+    EVENTS=[];
+    if(d1.table?.rows)EVENTS.push(...parseRows(d1.table.rows,COLS_PNIM_SRC,'pnim'));
+    if(d2.table?.rows)EVENTS.push(...parseRows(d2.table.rows,COLS_BS_SRC,'bs'));
+    dataLoaded=true;
+    render();
+  }catch(e){
+    calEl.innerHTML='<div style="text-align:center;padding:1.5rem;color:#c62828;background:#ffebee;border-radius:8px;margin:1rem;font-size:13px">שגיאה בטעינת הנתונים.<br>יש לוודא שהשיטים פומביים (כל מי שיש קישור יכול לצפות).<br><small>'+e.message+'</small></div>';
+  }
+}
+
+let view='week', curDate=new Date(2026,8,1);
+let catOn=new Set(Object.keys(ALL_CATS));
+let colOn=new Set([...COLS_PNIM_DEF,...COLS_BS_DEF]);
+
+const isMobile=()=>window.innerWidth<=600;
+
+function fd(d){return d.toISOString().slice(0,10);}
+function isT(d){return fd(d)===fd(new Date());}
+function add(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+const NUM_TO_HEB={1:'א',2:'ב',3:'ג',4:'ד',5:'ה',6:'ו',7:'ז',8:'ח',9:'ט',10:'י',
+  11:'יא',12:'יב',13:'יג',14:'יד',15:'טו',16:'טז',17:'יז',18:'יח',19:'יט',20:'כ',
+  21:'כא',22:'כב',23:'כג',24:'כד',25:'כה',26:'כו',27:'כז',28:'כח',29:'כט',30:'ל'};
+
+function toHebLetters(d){
+  try{
+    const f=new Intl.DateTimeFormat('he-u-ca-hebrew',{day:'numeric',month:'long'});
+    const parts=f.formatToParts(d);
+    const dayNum=parseInt(parts.find(p=>p.type==='day')?.value||'0');
+    const month=parts.find(p=>p.type==='month')?.value||'';
+    const dayLetter=NUM_TO_HEB[dayNum]||String(dayNum);
+    return {day:dayLetter,month,full:dayLetter+' '+month};
+  }catch(e){return {day:'',month:'',full:''};}
+}
+
+function heb(d){return toHebLetters(d).day;}
+function hebFull(d){return toHebLetters(d).full;}
+
+function vis(){return EVENTS.filter(e=>catOn.has(e.cat)&&colOn.has(e.col));}
+function bd(){const m={};vis().forEach(e=>{if(!m[e.date])m[e.date]=[];m[e.date].push(e);});return m;}
+
+function epHTML(ev){
+  const st=ALL_CATS[ev.cat];if(!st)return '';
+  const icon=ev.src==='pnim'?'🏠':'🏫';
+  return '<div class="ep" style="background:'+st.bg+';color:'+st.color+';border-right-color:'+st.border+'">'
+    +(ev.time?'<span class="et">'+ev.time+'</span>':'')+icon+' '+ev.title+'</div>';
+}
+
+function goDay(ds){
+  const p=ds.split('-');curDate=new Date(+p[0],+p[1]-1,+p[2]);
+  setView('day',null);
+}
+
+function renderDay(){
+  const ds=fd(curDate);
+  document.getElementById('plabel').textContent=DAY_NAMES[curDate.getDay()]+' '+curDate.getDate()+' '+MON_HEB[curDate.getMonth()];
+  const evs=(bd()[ds]||[]).sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+  let h='<div class="day-hdr-box"><div><div class="dhd">'+DAY_NAMES[curDate.getDay()]+', '+curDate.getDate()+' '+MON_HEB[curDate.getMonth()]+'</div>'
+    +'<div class="dhd-heb">'+hebFull(curDate)+'</div></div>'
+    +'<div class="dhd-cnt">'+(evs.length?evs.length+' אירועים':'אין אירועים')+'</div></div>';
+  if(!evs.length){h+='<div class="day-empty">אין אירועים ביום זה</div>';}
+  else{
+    h+='<div class="day-timeline">';
+    evs.forEach(ev=>{
+      const st=ALL_CATS[ev.cat];
+      const icon=ev.src==='pnim'?'🏠':'🏫';
+      const catLbl=ev.src==='pnim'?CATS_PNIM[ev.cat]?.lbl:CATS_BS[ev.cat]?.lbl;
+      h+='<div class="dev" style="border-right-color:'+st.border+';background:'+st.bg+'">'
+        +'<div class="dev-time">'+(ev.time||'כל היום')+'</div>'
+        +'<div class="dev-body"><div class="dev-title">'+icon+' '+ev.title+'</div>'
+        +'<div class="dev-meta">'
+        +'<span class="dev-cat" style="background:white;color:'+st.color+';border:1px solid '+st.border+'">'+catLbl+'</span>'
+        +'<span>'+COL_LABELS[ev.col]+'</span></div></div></div>';
+    });
+    h+='</div>';
+  }
+  document.getElementById('cal').innerHTML=h;
+}
+
+function renderWeek(){
+  const mob=isMobile();
+  const dow=curDate.getDay();
+  const startDay=new Date(curDate);
+  startDay.setDate(curDate.getDate()-dow);
+  const days=Array.from({length:7},(_,i)=>add(startDay,i));
+
+  document.getElementById('plabel').textContent=
+    days[0].getDate()+'/'+(days[0].getMonth()+1)+' – '+days[6].getDate()+'/'+(days[6].getMonth()+1)+'/'+days[6].getFullYear();
+
+  const m=bd();
+
+  function rowHTML(rowDays,showTimeCol){
+    const cols=(showTimeCol?'38px ':'')+('repeat('+rowDays.length+',1fr)');
+    let h='<div class="wk-hdr" style="grid-template-columns:'+cols+';margin-bottom:3px">';
+    if(showTimeCol)h+='<div></div>';
+    rowDays.forEach(d=>{
+      const t=isT(d);
+      h+='<div class="whc'+(t?' tod':'')+'">'+DAY_NAMES[d.getDay()]+'<span>'+d.getDate()+'</span></div>';
+    });
+    h+='</div><div class="wk-body" style="grid-template-columns:'+cols+';margin-bottom:8px">';
+    if(showTimeCol)h+='<div class="timecol"></div>';
+    rowDays.forEach(d=>{
+      const ds=fd(d),evs=m[ds]||[];
+      h+='<div class="dc'+(isT(d)?' tod':'')+'" onclick="goDay(\''+ds+'\')">'
+        +'<div class="dheb">'+heb(d)+'</div>'
+        +(evs.length?evs.map(epHTML).join(''):'<div class="nodot">—</div>')+'</div>';
+    });
+    h+='</div>';
+    return h;
+  }
+
+  let h;
+  if(mob){
+    // שורה 1: ראשון–שלישי (3 ימים), שורה 2: רביעי–שבת (4 ימים)
+    h=rowHTML(days.slice(0,3),false)+rowHTML(days.slice(3,7),false);
+  } else {
+    h=rowHTML(days,true);
+  }
+  document.getElementById('cal').innerHTML=h;
+}
+
+function renderMonth(){
+  const y=curDate.getFullYear(),mo=curDate.getMonth();
+  document.getElementById('plabel').textContent=MON_HEB[mo]+' '+y;
+  const first=new Date(y,mo,1),last=new Date(y,mo+1,0);
+  const m=bd();
+  let h='<div class="mo-hdr">';
+  DAY_NAMES.forEach(n=>h+='<div class="mhc">'+n+'</div>');
+  h+='</div><div class="mo-grid">';
+  for(let i=0;i<first.getDay();i++)h+='<div class="mc oth"></div>';
+  for(let d=1;d<=last.getDate();d++){
+    const dt=new Date(y,mo,d),ds=fd(dt),evs=m[ds]||[];
+    h+='<div class="mc'+(isT(dt)?' tod':'')+'" onclick="goDay(\''+ds+'\')">'
+      +'<div class="dnum"><span>'+d+'</span><span class="dhv">'+heb(dt)+'</span></div>'
+      +evs.slice(0,2).map(epHTML).join('')
+      +(evs.length>2?'<div class="more">+'+( evs.length-2)+' נוספים</div>':'')+'</div>';
+  }
+  h+='</div>';
+  document.getElementById('cal').innerHTML=h;
+}
+
+function renderYear(){
+  const y=curDate.getFullYear();
+  document.getElementById('plabel').textContent='שנת '+y;
+  const m=bd(),td=fd(new Date());
+  let h='<div class="yr-grid">';
+  for(let mo=0;mo<12;mo++){
+    const first=new Date(y,mo,1),last=new Date(y,mo+1,0);
+    h+='<div class="ym"><div class="ymt">'+MON_HEB[mo]+'</div><div class="mgrid">';
+    DAY_SHORT.forEach(n=>h+='<div class="mch">'+n+'</div>');
+    for(let i=0;i<first.getDay();i++)h+='<div></div>';
+    for(let d=1;d<=last.getDate();d++){
+      const ds=fd(new Date(y,mo,d)),hasEv=m[ds]?.length>0,isTo=ds===td;
+      h+='<div class="mcl'+(hasEv?' ev':'')+(isTo?' td':'')+'" onclick="goDay(\''+ds+'\')" title="'+d+' '+MON_HEB[mo]+(hasEv?' ('+m[ds].length+' אירועים)':'')+'">'+d+'</div>';
+    }
+    h+='</div></div>';
+  }
+  h+='</div>';
+  document.getElementById('cal').innerHTML=h;
+}
+
+function render(){
+  if(view==='day')renderDay();
+  else if(view==='week')renderWeek();
+  else if(view==='month')renderMonth();
+  else renderYear();
+}
+
+function setView(v,btn){
+  view=v;
+  document.querySelectorAll('.vb').forEach(b=>b.classList.remove('active'));
+  if(btn){btn.classList.add('active');}
+  else{document.querySelectorAll('.vb').forEach(b=>{if(b.textContent==='יומי')b.classList.add('active');});}
+  render();
+}
+function navPrev(){
+  if(view==='day')curDate=add(curDate,-1);
+  else if(view==='week')curDate=add(curDate,-7);
+  else if(view==='month')curDate=new Date(curDate.getFullYear(),curDate.getMonth()-1,1);
+  else curDate=new Date(curDate.getFullYear()-1,0,1);
+  render();
+}
+function navNext(){
+  if(view==='day')curDate=add(curDate,1);
+  else if(view==='week')curDate=add(curDate,7);
+  else if(view==='month')curDate=new Date(curDate.getFullYear(),curDate.getMonth()+1,1);
+  else curDate=new Date(curDate.getFullYear()+1,0,1);
+  render();
+}
+function goToday(){curDate=new Date();render();}
+
+function toggleAll(src){
+  const cats=src==='pnim'?Object.keys(CATS_PNIM):Object.keys(CATS_BS);
+  const cols=src==='pnim'?COLS_PNIM_DEF:COLS_BS_DEF;
+  const anyOn=cats.some(k=>catOn.has(k));
+  cats.forEach(k=>{
+    if(anyOn)catOn.delete(k);else catOn.add(k);
+    const el=document.getElementById('cat-'+k);
+    if(el){const inp=el.querySelector('input');if(inp)inp.checked=!anyOn;el.classList.toggle('on',!anyOn);}
+  });
+  cols.forEach(c=>{
+    if(anyOn)colOn.delete(c);else colOn.add(c);
+    const el=document.getElementById('col-'+c);
+    if(el)el.classList.toggle('on',!anyOn);
+  });
+  render();
+}
+
+(function(){
+  const c=document.getElementById('pnim-cats');
+  Object.entries(CATS_PNIM).forEach(([k,v])=>{
+    const l=document.createElement('label');l.className='chip on';l.id='cat-'+k;
+    l.style.cssText='background:'+v.bg+';color:'+v.color;
+    const inp=document.createElement('input');inp.type='checkbox';inp.checked=true;inp.style.display='none';
+    inp.onchange=function(){if(this.checked){catOn.add(k);l.classList.add('on');}else{catOn.delete(k);l.classList.remove('on');}render();};
+    const dot=document.createElement('span');dot.className='dot';dot.style.background=v.border;
+    l.append(inp,dot,document.createTextNode(v.lbl));c.appendChild(l);
+  });
+})();
+(function(){
+  const c=document.getElementById('bs-cats');
+  Object.entries(CATS_BS).forEach(([k,v])=>{
+    const l=document.createElement('label');l.className='chip on';l.id='cat-'+k;
+    l.style.cssText='background:'+v.bg+';color:'+v.color;
+    const inp=document.createElement('input');inp.type='checkbox';inp.checked=true;inp.style.display='none';
+    inp.onchange=function(){if(this.checked){catOn.add(k);l.classList.add('on');}else{catOn.delete(k);l.classList.remove('on');}render();};
+    const dot=document.createElement('span');dot.className='dot';dot.style.background=v.border;
+    l.append(inp,dot,document.createTextNode(v.lbl));c.appendChild(l);
+  });
+})();
+(function(){
+  const c=document.getElementById('pnim-cols');
+  COLS_PNIM_DEF.forEach(col=>{
+    const sp=document.createElement('span');sp.className='cc on';sp.id='col-'+col;sp.textContent=COL_LABELS[col]||col;
+    sp.onclick=function(){if(colOn.has(col)){colOn.delete(col);sp.classList.remove('on');}else{colOn.add(col);sp.classList.add('on');}render();};
+    c.appendChild(sp);
+  });
+})();
+(function(){
+  const c=document.getElementById('bs-cols');
+  COLS_BS_DEF.forEach(col=>{
+    const sp=document.createElement('span');sp.className='cc on';sp.id='col-'+col;sp.textContent=COL_LABELS[col]||col;
+    sp.onclick=function(){if(colOn.has(col)){colOn.delete(col);sp.classList.remove('on');}else{colOn.add(col);sp.classList.add('on');}render();};
+    c.appendChild(sp);
+  });
+})();
+
+window.addEventListener('resize',()=>{if(view==='week')renderWeek();});
+loadData();
+</script>
+</body>
+</html>
