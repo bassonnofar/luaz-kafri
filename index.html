@@ -364,7 +364,10 @@ function parseSheetRows(rows, src){
       // עמודות: 0=שם שורה, 1=שעה יום1, 2=תוכן יום1, 3=שעה יום2...
       // עמודה אחרונה = קטגוריה, לפניה = ריקה
       // כל זוג החל מindex 1 עד length-3
-      for(let ci=1; ci<row.c.length-2; ci+=2){
+      // 3 עמודות לכל יום: שעה, תוכן, קטגוריה
+      // עמודה 0 = שם שורה, אחר כך 3 עמודות לכל יום
+      // עמודות התאריך נמצאות בכל ci שהוא תחילת כל טריפלט (1, 4, 7...)
+      for(let ci=1; ci<row.c.length-1; ci+=3){
         const d = parseDateCell(row.c[ci]);
         currentDates.push(d);
       }
@@ -384,18 +387,23 @@ function parseSheetRows(rows, src){
       const date = currentDates[di];
       if(!date) continue;
 
-      const timeIdx = 1 + di*2;
-      const contentIdx = 2 + di*2;
+      // 3 עמודות לכל יום: שעה, תוכן, קטגוריה
+      const timeIdx    = 1 + di*3;
+      const contentIdx = 2 + di*3;
+      const catIdx     = 3 + di*3;
       if(contentIdx >= row.c.length) continue;
 
-      const timeVal = getCellVal(row.c[timeIdx]);
+      const timeVal    = getCellVal(row.c[timeIdx]);
       const contentVal = getCellVal(row.c[contentIdx]);
       if(!contentVal) continue;
+
+      // קטגוריה לפי תא ספציפי (אם ריק — לפי שורה)
+      const cellCatTxt = catIdx < row.c.length ? getCellVal(row.c[catIdx]) : '';
+      const cat = detectCatFromText(cellCatTxt || catTxt, src);
 
       // שעה: gviz מחזיר TimeOfDay כ-{h,m,s} או string
       let cleanTime = null;
       if(timeVal){
-        // נסה לפרסר TimeOfDay object
         const tc = row.c[timeIdx];
         if(tc && typeof tc.v === 'object' && tc.v !== null && 'h' in tc.v){
           const h = String(tc.v.h).padStart(2,'0');
@@ -424,7 +432,7 @@ async function loadData(){
     ]);
     const d1=parseGviz(r1),d2=parseGviz(r2);
     EVENTS=[];
-if(d1.table?.rows) EVENTS.push(...parseSheetRows(d1.table.rows,'pnim'));
+    if(d1.table?.rows) EVENTS.push(...parseSheetRows(d1.table.rows,'pnim'));
     if(d2.table?.rows) EVENTS.push(...parseSheetRows(d2.table.rows,'bs'));
     dataLoaded=true;
     if(EVENTS.length===0){
