@@ -351,9 +351,9 @@ function isHeaderRowCheck(row){
 function parseSheetRows(rows, src){
   const evs=[];
   let currentDates = [];
-  // זיהוי step: אם יש 22+ עמודות -> 3 עמודות לכל יום, אחרת 2
-  const totalCols = rows[0]?.c?.length || 0;
-  const dayStep = totalCols >= 22 ? 3 : 2;
+  // תמיד 2 עמודות לכל יום (שעה + תוכן)
+  // עמודת קטגוריה = עמודה קבועה לפי index (לא לכל יום)
+  const dayStep = 2;
 
   const COL_MAP = {
     'חד"א':'hada','צוות פנימייה':'tzevet-pnim','שכבת ט':'tet',
@@ -373,9 +373,11 @@ function parseSheetRows(rows, src){
       // עמודות: 0=שם שורה, 1=שעה יום1, 2=תוכן יום1, 3=שעה יום2...
       // עמודה אחרונה = קטגוריה, לפניה = ריקה
       // כל זוג החל מindex 1 עד length-3
-      for(let ci=1; ci<row.c.length-1; ci+=dayStep){
+      // תאריכים בכל עמודה זוגית החל מ-1 (כל 2)
+      for(let ci=1; ci<row.c.length; ci+=2){
         const d = parseDateCell(row.c[ci]);
-        currentDates.push(d);
+        if(d) currentDates.push(d);
+        else break; // עצור כשנגמרים התאריכים
       }
       continue;
     }
@@ -394,18 +396,16 @@ function parseSheetRows(rows, src){
       if(!date) continue;
 
       // 3 עמודות לכל יום: שעה, תוכן, קטגוריה
-      const timeIdx    = 1 + di*dayStep;
-      const contentIdx = 2 + di*dayStep;
-      const catIdx     = dayStep===3 ? (3 + di*dayStep) : -1;
+      const timeIdx    = 1 + di*2;
+      const contentIdx = 2 + di*2;
       if(contentIdx >= row.c.length) continue;
 
       const timeVal    = getCellVal(row.c[timeIdx]);
       const contentVal = getCellVal(row.c[contentIdx]);
       if(!contentVal) continue;
 
-      // קטגוריה לפי תא ספציפי (אם ריק — לפי שורה)
-      const cellCatTxt = catIdx < row.c.length ? getCellVal(row.c[catIdx]) : '';
-      const cat = detectCatFromText(cellCatTxt || catTxt, src);
+      // קטגוריה = עמודה קבועה לפי שורה (catTxt שחושב למעלה)
+      const cat = detectCatFromText(catTxt, src);
 
       // שעה: gviz מחזיר TimeOfDay כ-{h,m,s} או string
       let cleanTime = null;
