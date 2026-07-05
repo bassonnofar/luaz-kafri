@@ -424,7 +424,8 @@ async function loadData(){
     ]);
     const d1=parseGviz(r1),d2=parseGviz(r2);
     EVENTS=[];
-    if(d1.table?.rows) EVENTS.push(...parseSheetRows(d1.table.rows,'pnim'));
+    console.log('rows:', JSON.stringify(d1.table?.rows?.slice(0,3)));
+if(d1.table?.rows) EVENTS.push(...parseSheetRows(d1.table.rows,'pnim'));
     if(d2.table?.rows) EVENTS.push(...parseSheetRows(d2.table.rows,'bs'));
     dataLoaded=true;
     if(EVENTS.length===0){
