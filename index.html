@@ -386,8 +386,19 @@ function parseSheetRows(rows, src){
     const rowName = getCellVal(row.c[0]);
     if(!rowName) continue;
 
-    // עמודה אחרונה = קטגוריה
-    const catTxt = getCellVal(row.c[row.c.length-1]);
+    // מצא את עמודת הקטגוריה — החפש את התא הראשון שמכיל קטגוריה מוכרת
+    // לפי הנתונים: index 16 בשיט הפנימייה (1 + 7*2 + 1 ריק)
+    // נחפש בכל התאים מהindex 14 ואילך
+    let catTxt = '';
+    for(let ci = row.c.length-2; ci >= Math.floor(row.c.length/2); ci--){
+      const v = getCellVal(row.c[ci]);
+      if(v && ['פעילות חוץ פנימייה','פעילות פנים פנימייה','פעילות צוות פנימייה','טיול פנימייה',
+               'פעילות חוץ תלמידים','פעילות פנים תלמידים','בגרות/מתכונת','טיול בית ספר',
+               'בחינות','פעילות צוות','ללא'].includes(v)){
+        catTxt = v;
+        break;
+      }
+    }
     const cat = detectCatFromText(catTxt, src);
     const col = COL_MAP[rowName] || 'kfar';
 
@@ -407,17 +418,29 @@ function parseSheetRows(rows, src){
       // קטגוריה = עמודה קבועה לפי שורה (catTxt שחושב למעלה)
       const cat = detectCatFromText(catTxt, src);
 
-      // שעה: gviz מחזיר TimeOfDay כ-{h,m,s} או string
+      // שעה: gviz מחזיר שעה כ-TimeOfDay object {h,m,s} או כטקסט
       let cleanTime = null;
-      if(timeVal){
-        const tc = row.c[timeIdx];
-        if(tc && typeof tc.v === 'object' && tc.v !== null && 'h' in tc.v){
+      const tc = row.c[timeIdx];
+      if(tc){
+        // TimeOfDay object
+        if(tc.v && typeof tc.v === 'object' && 'h' in tc.v){
           const h = String(tc.v.h).padStart(2,'0');
           const m = String(tc.v.m||0).padStart(2,'0');
           cleanTime = h+':'+m;
-        } else if(tc && tc.f){
+        }
+        // formatted string (f field)
+        else if(tc.f && tc.f.match(/\d{1,2}:\d{2}/)){
           cleanTime = tc.f;
-        } else if(timeVal.match(/\d{1,2}:\d{2}/)){
+        }
+        // value as number (gviz time fraction of day)
+        else if(typeof tc.v === 'number'){
+          const totalMins = Math.round(tc.v * 24 * 60);
+          const h = String(Math.floor(totalMins/60)).padStart(2,'0');
+          const m = String(totalMins%60).padStart(2,'0');
+          cleanTime = h+':'+m;
+        }
+        // plain text
+        else if(timeVal && timeVal.match(/\d{1,2}:\d{2}/)){
           cleanTime = timeVal;
         }
       }
@@ -692,3 +715,4 @@ loadData();
 </script>
 </body>
 </html>
+
