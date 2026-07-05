@@ -348,88 +348,79 @@ function isHeaderRowCheck(row){
 
 function parseSheetRows(rows, src){
   const evs=[];
-  let currentDates = [];
-  // תמיד 2 עמודות לכל יום (שעה + תוכן)
-  // עמודת קטגוריה = עמודה קבועה לפי index (לא לכל יום)
-  const dayStep = 2;
+  let currentDates=[];
 
-  const COL_MAP = {
+  const COL_MAP={
     'חד"א':'hada','צוות פנימייה':'tzevet-pnim','שכבת ט':'tet',
     'שכבת י':'yod','שכבת יא':'yoda','שכבת יב':'yodb',
     'אקדמיה':'akademia','נעל"ה':'naale','פנימייה':'pnimiyd','כפר':'kfar',
     'צוות בית ספר':'tzevet-bs','בית ספר':'bs'
   };
 
+  const KNOWN_CATS=['פעילות חוץ פנימייה','פעילות פנים פנימייה','פעילות צוות פנימייה','טיול פנימייה',
+    'פעילות חוץ תלמידים','פעילות פנים תלמידים','בגרות/מתכונת','טיול בית ספר',
+    'בחינות','פעילות צוות','ללא'];
+
   for(let ri=0; ri<rows.length; ri++){
-    const row = rows[ri];
+    const row=rows[ri];
     if(!row.c) continue;
 
-    if(isHeaderRowCheck(row)) continue;
+    const firstVal = row.c[0]?.v ? String(row.c[0].v).trim() : '';
 
-    if(isDateRowCheck(row)){
-      currentDates = [];
-      // עמודות: 0=שם שורה, 1=שעה יום1, 2=תוכן יום1, 3=שעה יום2...
-      // עמודה אחרונה = קטגוריה, לפניה = ריקה
-      // כל זוג החל מindex 1 עד length-3
-      // שורת תאריכים: index 1,3,5,7,9,11,13 (כל 2)
-      for(let ci=1; ci<row.c.length; ci+=2){
-        const d = parseDateCell(row.c[ci]);
-        if(d) currentDates.push(d);
+    // שורת כותרות ימים — דלג
+    if(!firstVal){
+      const second = row.c[1]?.f || row.c[1]?.v || '';
+      if(['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'].some(d=>String(second).includes(d))) continue;
+    }
+
+    // שורת תאריכים — תא ראשון ריק, תא שני הוא תאריך
+    if(!firstVal){
+      const d = parseDateCell(row.c[1]);
+      if(d){
+        currentDates=[];
+        // תאריכים ב-1,3,5,7,9,11,13
+        for(let ci=1; ci<row.c.length; ci+=2){
+          const dt=parseDateCell(row.c[ci]);
+          currentDates.push(dt||null);
+        }
       }
       continue;
     }
 
+    // שורת תוכן
     if(!currentDates.length) continue;
-    // עמודה A = שם שורה
-    const rowName = getCellVal(row.c[0]);
-    if(!rowName) continue;
+    const rowName=firstVal;
+    const col=COL_MAP[rowName]||'kfar';
 
-    // קטגוריה קבועה לשורה — index 16
-    const catTxt = row.c.length > 16 ? getCellVal(row.c[16]) : '';
-    const cat = detectCatFromText(catTxt, src);
-    const col = COL_MAP[rowName] || 'kfar';
+    // קטגוריה — index 16 קבוע
+    let catTxt='';
+    if(row.c.length>16 && row.c[16]?.v){
+      catTxt=String(row.c[16].v).trim();
+    }
+    const cat=detectCatFromText(catTxt,src);
 
+    // תוכן — ב-2,4,6,8,10,12,14 (תאריך index + 1)
     for(let di=0; di<currentDates.length; di++){
-      const date = currentDates[di];
+      const date=currentDates[di];
       if(!date) continue;
 
-      // 2 עמודות לכל יום: שעה, תוכן (index 1,2 / 3,4 / 5,6...)
-      const timeIdx    = 1 + di*2;
-      const contentIdx = 2 + di*2;
-      if(contentIdx >= row.c.length) continue;
+      const contentIdx = 1 + di*2 + 1; // = 2,4,6,8...
+      if(contentIdx>=row.c.length) continue;
 
-      const timeVal    = getCellVal(row.c[timeIdx]);
-      const contentVal = getCellVal(row.c[contentIdx]);
+      const contentVal=getCellVal(row.c[contentIdx]);
       if(!contentVal) continue;
 
-      // קטגוריה — עמודה קבועה index 16
-      const cat = detectCatFromText(catTxt, src);
+      // חלץ שעה מתוך הטקסט אם כתוב "09:00 שם האירוע"
+      let time=null, title=contentVal;
+      const timeMatch=contentVal.match(/^(\d{1,2}:\d{2}(?:-\d{1,2}:\d{2})?)\s+(.*)/);
+      if(timeMatch){time=timeMatch[1];title=timeMatch[2];}
 
-      // שעה: gviz מחזיר שעה כ-fraction של יום (מספר), object, או טקסט
-      let cleanTime = null;
-      const tc = row.c[timeIdx];
-      if(tc && (tc.v !== null && tc.v !== undefined)){
-        if(tc.f && String(tc.f).match(/\d{1,2}:\d{2}/)){
-          // הכי אמין — ערך מעוצב כבר
-          cleanTime = tc.f;
-        } else if(typeof tc.v === 'number' && tc.v >= 0 && tc.v < 1){
-          // fraction of day: 0.375 = 09:00
-          const totalMins = Math.round(tc.v * 24 * 60);
-          const h = String(Math.floor(totalMins/60)).padStart(2,'0');
-          const m = String(totalMins%60).padStart(2,'0');
-          cleanTime = h+':'+m;
-        } else if(typeof tc.v === 'object' && tc.v && 'h' in tc.v){
-          cleanTime = String(tc.v.h).padStart(2,'0')+':'+String(tc.v.m||0).padStart(2,'0');
-        } else if(typeof tc.v === 'string' && tc.v.match(/\d{1,2}:\d{2}/)){
-          cleanTime = tc.v;
-        }
-      }
-
-      evs.push({date:fd(date), title:contentVal, time:cleanTime, src, cat, col});
+      evs.push({date:fd(date),title,time,src,cat,col});
     }
   }
   return evs;
 }
+
 
 async function loadData(){
   const calEl=document.getElementById('cal');
