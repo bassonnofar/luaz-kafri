@@ -299,6 +299,8 @@ function detectCatFromText(txt, src){
   if(t==='טיול בית ספר') return 'tiyul-bs';
   if(t==='בחינות') return 'bhinot';
   if(t==='פעילות צוות') return 'tzevet-bs';
+  // ללא = ברירת מחדל
+  if(t==='ללא') return src==='pnim'?'in-pnim':'in-bs';
   // fallback
   return src==='pnim'?'in-pnim':'in-bs';
 }
@@ -349,6 +351,9 @@ function isHeaderRowCheck(row){
 function parseSheetRows(rows, src){
   const evs=[];
   let currentDates = [];
+  // זיהוי step: אם יש 22+ עמודות -> 3 עמודות לכל יום, אחרת 2
+  const totalCols = rows[0]?.c?.length || 0;
+  const dayStep = totalCols >= 22 ? 3 : 2;
 
   const COL_MAP = {
     'חד"א':'hada','צוות פנימייה':'tzevet-pnim','שכבת ט':'tet',
@@ -368,10 +373,7 @@ function parseSheetRows(rows, src){
       // עמודות: 0=שם שורה, 1=שעה יום1, 2=תוכן יום1, 3=שעה יום2...
       // עמודה אחרונה = קטגוריה, לפניה = ריקה
       // כל זוג החל מindex 1 עד length-3
-      // 3 עמודות לכל יום: שעה, תוכן, קטגוריה
-      // עמודה 0 = שם שורה, אחר כך 3 עמודות לכל יום
-      // עמודות התאריך נמצאות בכל ci שהוא תחילת כל טריפלט (1, 4, 7...)
-      for(let ci=1; ci<row.c.length-1; ci+=3){
+      for(let ci=1; ci<row.c.length-1; ci+=dayStep){
         const d = parseDateCell(row.c[ci]);
         currentDates.push(d);
       }
@@ -392,9 +394,9 @@ function parseSheetRows(rows, src){
       if(!date) continue;
 
       // 3 עמודות לכל יום: שעה, תוכן, קטגוריה
-      const timeIdx    = 1 + di*3;
-      const contentIdx = 2 + di*3;
-      const catIdx     = 3 + di*3;
+      const timeIdx    = 1 + di*dayStep;
+      const contentIdx = 2 + di*dayStep;
+      const catIdx     = dayStep===3 ? (3 + di*dayStep) : -1;
       if(contentIdx >= row.c.length) continue;
 
       const timeVal    = getCellVal(row.c[timeIdx]);
