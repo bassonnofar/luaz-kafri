@@ -299,98 +299,116 @@ function detectCatFromText(txt, src){
   return src==='pnim'?'in-pnim':'in-bs';
 }
 
+function getCellVal(cell){
+  if(!cell) return '';
+  // gviz מחזיר v=ערך, f=ערך מעוצב
+  const v = cell.v !== null && cell.v !== undefined ? String(cell.v) : '';
+  const f = cell.f ? String(cell.f) : '';
+  return (f || v).trim();
+}
+
+function parseDateCell(cell){
+  if(!cell) return null;
+  const v = cell.v;
+  const f = cell.f || '';
+  // gviz Date object
+  if(typeof v === 'string' && v.startsWith('Date(')){
+    const m = v.match(/Date\((\d+),(\d+),(\d+)/);
+    if(m) return new Date(+m[1], +m[2], +m[3]);
+  }
+  // formatted string DD/MM/YYYY
+  const dm = f.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(dm) return new Date(+dm[3], +dm[2]-1, +dm[1]);
+  const dm2 = String(v||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(dm2) return new Date(+dm2[3], +dm2[2]-1, +dm2[1]);
+  return null;
+}
+
+function isDateRowCheck(row){
+  // שורת תאריכים: תא ראשון ריק, תא שני מכיל תאריך
+  if(!row.c || row.c.length < 2) return false;
+  const first = getCellVal(row.c[0]);
+  if(first) return false;
+  // נסה לפרסר תאריך מהתא השני
+  const d = parseDateCell(row.c[1]);
+  return d !== null;
+}
+
+function isHeaderRowCheck(row){
+  if(!row.c || row.c.length < 2) return false;
+  const first = getCellVal(row.c[0]);
+  if(first) return false;
+  const second = getCellVal(row.c[1]);
+  return ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'].some(d=>second.includes(d));
+}
+
 function parseSheetRows(rows, src){
   const evs=[];
-  // מבנה השיט: שורת ימים, שורת תאריכים, ואז שורות תוכן
-  // כל יום = שתי עמודות (שעה + תוכן), עמודה אחרונה = קטגוריה
-  // שורות כותרות מזוהות ע"י שהתא הראשון ריק והתא השני מכיל שם יום
-  
-  let currentDates = []; // תאריכים לשבוע הנוכחי
-  
+  let currentDates = [];
+
+  const COL_MAP = {
+    'חד"א':'hada','צוות פנימייה':'tzevet-pnim','שכבת ט':'tet',
+    'שכבת י':'yod','שכבת יא':'yoda','שכבת יב':'yodb',
+    'אקדמיה':'akademia','נעל"ה':'naale','פנימייה':'pnimiyd','כפר':'kfar',
+    'צוות בית ספר':'tzevet-bs','בית ספר':'bs'
+  };
+
   for(let ri=0; ri<rows.length; ri++){
     const row = rows[ri];
-    if(!row.c || row.c.length===0) continue;
-    
-    const firstCell = row.c[0]?.v || row.c[0]?.f || '';
-    const firstStr = String(firstCell).trim();
-    
-    // זיהוי שורת תאריכים: התא הראשון ריק, התא השני מכיל תאריך בפורמט DD/MM/YYYY
-    const secondCell = row.c[1]?.v || row.c[1]?.f || '';
-    const secondStr = String(secondCell).trim();
-    const isDateRow = !firstStr && secondStr.match(/^\d{2}\/\d{2}\/\d{4}$/);
-    
-    if(isDateRow){
-      // קרא את כל התאריכים מהשורה
-      // עמודות: 0=ריק, 1,2=יום1, 3,4=יום2, ..., -2=ריק, -1=קטגוריה
+    if(!row.c) continue;
+
+    if(isHeaderRowCheck(row)) continue;
+
+    if(isDateRowCheck(row)){
       currentDates = [];
-      // כל זוג עמודות = יום אחד (מ-index 1 עד length-3, כל 2)
+      // עמודות: 0=שם שורה, 1=שעה יום1, 2=תוכן יום1, 3=שעה יום2...
+      // עמודה אחרונה = קטגוריה, לפניה = ריקה
+      // כל זוג החל מindex 1 עד length-3
       for(let ci=1; ci<row.c.length-2; ci+=2){
-        const cell = row.c[ci];
-        const dateStr = String(cell?.v || cell?.f || '').trim();
-        if(dateStr.match(/^\d{2}\/\d{2}\/\d{4}$/)){
-          const [d,m,y] = dateStr.split('/');
-          currentDates.push(new Date(+y, +m-1, +d));
-        } else {
-          currentDates.push(null);
-        }
+        const d = parseDateCell(row.c[ci]);
+        currentDates.push(d);
       }
       continue;
     }
-    
-    // זיהוי שורת שמות ימים — דלג
-    const isHeaderRow = !firstStr && ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'].includes(secondStr);
-    if(isHeaderRow) continue;
-    
-    // שורת תוכן רגילה
-    if(!firstStr || !currentDates.length) continue;
-    
-    const rowName = firstStr; // שם העמודה (חד"א, שכבת ט...)
+
+    if(!currentDates.length) continue;
+    const rowName = getCellVal(row.c[0]);
+    if(!rowName) continue;
+
     // עמודה אחרונה = קטגוריה
-    const lastCell = row.c[row.c.length-1];
-    const catTxt = String(lastCell?.v || lastCell?.f || '').trim();
+    const catTxt = getCellVal(row.c[row.c.length-1]);
     const cat = detectCatFromText(catTxt, src);
-    
-    // קרא תוכן לכל יום
-    // עמודות תוכן: index 1,2 = יום0, 3,4 = יום1, ...
+    const col = COL_MAP[rowName] || 'kfar';
+
     for(let di=0; di<currentDates.length; di++){
       const date = currentDates[di];
       if(!date) continue;
-      
+
       const timeIdx = 1 + di*2;
       const contentIdx = 2 + di*2;
-      
-      if(timeIdx >= row.c.length-1) continue;
-      
-      const timeCell = row.c[timeIdx];
-      const contentCell = row.c[contentIdx];
-      
-      const timeVal = String(timeCell?.v || timeCell?.f || '').trim();
-      const contentVal = String(contentCell?.v || contentCell?.f || '').trim();
-      
+      if(contentIdx >= row.c.length) continue;
+
+      const timeVal = getCellVal(row.c[timeIdx]);
+      const contentVal = getCellVal(row.c[contentIdx]);
       if(!contentVal) continue;
-      
-      // נקה תוכן מ-[merged] אם יש
-      const cleanContent = contentVal.replace(/\[merged\]/g,'').trim();
-      if(!cleanContent) continue;
-      
-      // נקה שעה
-      const cleanTime = timeVal.replace(/\[merged\]/g,'').trim() || null;
-      
-      // מפה שם שורה לשם עמודה
-      const colMap = {
-        'חד"א':'hada','צוות פנימייה':'tzevet-pnim','שכבת ט':'tet',
-        'שכבת י':'yod','שכבת יא':'yoda','שכבת יב':'yodb',
-        'אקדמיה':'akademia','נעל"ה':'naale','פנימייה':'pnimiyd','כפר':'kfar',
-        'צוות בית ספר':'tzevet-bs','בית ספר':'bs'
-      };
-      const col = colMap[rowName] || rowName;
-      
-      evs.push({
-        date: fd(date),
-        title: cleanContent,
-        time: cleanTime,
-        src, cat, col
-      });
+
+      // שעה: gviz מחזיר TimeOfDay כ-{h,m,s} או string
+      let cleanTime = null;
+      if(timeVal){
+        // נסה לפרסר TimeOfDay object
+        const tc = row.c[timeIdx];
+        if(tc && typeof tc.v === 'object' && tc.v !== null && 'h' in tc.v){
+          const h = String(tc.v.h).padStart(2,'0');
+          const m = String(tc.v.m||0).padStart(2,'0');
+          cleanTime = h+':'+m;
+        } else if(tc && tc.f){
+          cleanTime = tc.f;
+        } else if(timeVal.match(/\d{1,2}:\d{2}/)){
+          cleanTime = timeVal;
+        }
+      }
+
+      evs.push({date:fd(date), title:contentVal, time:cleanTime, src, cat, col});
     }
   }
   return evs;
