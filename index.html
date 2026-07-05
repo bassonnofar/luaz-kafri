@@ -286,16 +286,20 @@ function parseRows(rows,cols,src){
 // מיפוי קטגוריות לפי טקסט
 function detectCatFromText(txt, src){
   if(!txt) return src==='pnim'?'in-pnim':'in-bs';
-  if(txt.includes('חוץ')&&src==='pnim') return 'out-pnim';
-  if(txt.includes('פנים')&&src==='pnim') return 'in-pnim';
-  if(txt.includes('צוות')&&src==='pnim') return 'tzevet-pnim';
-  if(txt.includes('טיול')&&src==='pnim') return 'tiyul-pnim';
-  if(txt.includes('חוץ')&&src==='bs') return 'out-bs';
-  if(txt.includes('פנים')&&src==='bs') return 'in-bs';
-  if(txt.includes('בגרות')||txt.includes('מתכונת')) return 'bagrut';
-  if(txt.includes('טיול')&&src==='bs') return 'tiyul-bs';
-  if(txt.includes('בחינות')) return 'bhinot';
-  if(txt.includes('צוות')&&src==='bs') return 'tzevet-bs';
+  const t = txt.trim();
+  // פנימייה — התאמה מדויקת
+  if(t==='פעילות חוץ פנימייה') return 'out-pnim';
+  if(t==='פעילות פנים פנימייה') return 'in-pnim';
+  if(t==='פעילות צוות פנימייה') return 'tzevet-pnim';
+  if(t==='טיול פנימייה') return 'tiyul-pnim';
+  // בית ספר — התאמה מדויקת
+  if(t==='פעילות חוץ תלמידים') return 'out-bs';
+  if(t==='פעילות פנים תלמידים') return 'in-bs';
+  if(t==='בגרות/מתכונת') return 'bagrut';
+  if(t==='טיול בית ספר') return 'tiyul-bs';
+  if(t==='בחינות') return 'bhinot';
+  if(t==='פעילות צוות') return 'tzevet-bs';
+  // fallback
   return src==='pnim'?'in-pnim':'in-bs';
 }
 
