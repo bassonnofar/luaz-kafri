@@ -580,13 +580,17 @@ function renderMonth(){
 }
 
 function renderYear(){
-  const y=curDate.getFullYear();
-  document.getElementById('plabel').textContent='שנת '+y;
+  // שנת תשפ"ז: ספטמבר 2026 — אוגוסט 2027
+  document.getElementById('plabel').textContent='תשפ"ז — 2026/2027';
   const m=bd(),td=fd(new Date());
   let h='<div class="yr-grid">';
-  for(let mo=0;mo<12;mo++){
+  // 12 חודשים מספטמבר 2026 עד אוגוסט 2027
+  const months=[];
+  for(let mo=8;mo<12;mo++) months.push({y:2026,mo});
+  for(let mo=0;mo<8;mo++)  months.push({y:2027,mo});
+  for(const {y,mo} of months){
     const first=new Date(y,mo,1),last=new Date(y,mo+1,0);
-    h+='<div class="ym"><div class="ymt">'+MON_HEB[mo]+'</div><div class="mgrid">';
+    h+='<div class="ym"><div class="ymt">'+MON_HEB[mo]+' '+(mo>=8?'2026':'2027')+'</div><div class="mgrid">';
     DAY_SHORT.forEach(n=>h+='<div class="mch">'+n+'</div>');
     for(let i=0;i<first.getDay();i++)h+='<div></div>';
     for(let d=1;d<=last.getDate();d++){
