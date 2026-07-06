@@ -211,9 +211,9 @@ const CATS_BS={
   'tzevet-bs':{bg:'#e0f5f0',color:'#004a3a',border:'#208070',lbl:'פעילות צוות'}
 };
 const ALL_CATS={...CATS_PNIM,...CATS_BS};
-const COLS_PNIM_DEF=['hada','tzevet-pnim','tet','yod','yoda','yodb','akademia','naale','pnimiyd','kfar'];
+const COLS_PNIM_DEF=['hada','tzevet-pnim','tet','yod','yoda','yodb','akademia','naale','pnimiyd','kfar','tornoot'];
 const COLS_BS_DEF=['tzevet-bs','tet','yod','yoda','yodb','bs','kfar'];
-const COL_LABELS={hada:'חד"א','tzevet-pnim':'צוות פנימייה',tet:'שכבת ט',yod:'שכבת י',yoda:'שכבת יא',yodb:'שכבת יב',akademia:'אקדמיה',naale:'נעל"ה',pnimiyd:'פנימייה',kfar:'כפר','tzevet-bs':'צוות ביה"ס',bs:'בית ספר'};
+const COL_LABELS={hada:'חד"א','tzevet-pnim':'צוות פנימייה',tet:'שכבת ט',yod:'שכבת י',yoda:'שכבת יא',yodb:'שכבת יב',akademia:'אקדמיה',naale:'נעל"ה',pnimiyd:'פנימייה',kfar:'כפר','tzevet-bs':'צוות ביה"ס',bs:'בית ספר',tornoot:'תורנויות'};
 
 const PNIM_URL='https://docs.google.com/spreadsheets/d/1I7vQ3DJQAQEt8MOF693r0z_aJ8d-OBoy0rDjms4-i4I/gviz/tq?tqx=out:json&t='+Date.now();
 const BS_URL='https://docs.google.com/spreadsheets/d/1FI-0x8baQ7Ztm0O4oYUbGDAuw2sQ1sHdbHmZlJuwG-0/gviz/tq?tqx=out:json';
@@ -299,10 +299,10 @@ function detectCatFromText(txt, src){
   if(t==='טיול בית ספר') return 'tiyul-bs';
   if(t==='בחינות') return 'bhinot';
   if(t==='פעילות צוות') return 'tzevet-bs';
-  // ללא = ברירת מחדל
-  if(t==='ללא') return src==='pnim'?'in-pnim':'in-bs';
+  // ללא = ריק
+  if(t==='ללא'||!t) return null;
   // fallback
-  return src==='pnim'?'in-pnim':'in-bs';
+  return null;
 }
 
 function getCellVal(cell){
@@ -354,7 +354,7 @@ function parseSheetRows(rows, src){
     'חד"א':'hada','צוות פנימייה':'tzevet-pnim','שכבת ט':'tet',
     'שכבת י':'yod','שכבת יא':'yoda','שכבת יב':'yodb',
     'אקדמיה':'akademia','נעל"ה':'naale','פנימייה':'pnimiyd','כפר':'kfar',
-    'צוות בית ספר':'tzevet-bs','בית ספר':'bs'
+    'צוות בית ספר':'tzevet-bs','בית ספר':'bs','תורנויות':'tornoot'
   };
 
   const KNOWN_CATS=['פעילות חוץ פנימייה','פעילות פנים פנימייה','פעילות צוות פנימייה','טיול פנימייה',
@@ -477,6 +477,7 @@ function vis(){return EVENTS.filter(e=>catOn.has(e.cat)&&colOn.has(e.col));}
 function bd(){const m={};vis().forEach(e=>{if(!m[e.date])m[e.date]=[];m[e.date].push(e);});return m;}
 
 function epHTML(ev){
+  if(!ev.cat) return '';
   const st=ALL_CATS[ev.cat];if(!st)return '';
   const icon=ev.src==='pnim'?'🏠':'🏫';
   return '<div class="ep" style="background:'+st.bg+';color:'+st.color+';border-right-color:'+st.border+'">'
