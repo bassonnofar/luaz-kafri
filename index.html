@@ -317,16 +317,17 @@ function parseDateCell(cell){
   if(!cell) return null;
   const v = cell.v;
   const f = cell.f || '';
-  // עדיפות לערך המעוצב DD/MM/YYYY — מדויק יותר מ-Date object
+  // 1. f כטקסט DD/MM/YYYY
   const dm = f.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if(dm) return new Date(+dm[3], +dm[2]-1, +dm[1]);
-  // gviz Date string
+  // 2. v כטקסט DD/MM/YYYY
+  const dm2 = String(v||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(dm2) return new Date(+dm2[3], +dm2[2]-1, +dm2[1]);
+  // 3. gviz Date string — אחרון כי עלול לגרום לבעיית timezone
   if(typeof v === 'string' && v.startsWith('Date(')){
     const m = v.match(/Date\((\d+),(\d+),(\d+)/);
     if(m) return new Date(+m[1], +m[2], +m[3]);
   }
-  const dm2 = String(v||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(dm2) return new Date(+dm2[3], +dm2[2]-1, +dm2[1]);
   return null;
 }
 
