@@ -216,7 +216,7 @@ const COLS_BS_DEF=['tzevet-bs','tet','yod','yoda','yodb','bs','kfar'];
 const COL_LABELS={hada:'חד"א','tzevet-pnim':'צוות פנימייה',tet:'שכבת ט',yod:'שכבת י',yoda:'שכבת יא',yodb:'שכבת יב',akademia:'אקדמיה',naale:'נעל"ה',pnimiyd:'פנימייה',kfar:'כפר','tzevet-bs':'צוות ביה"ס',bs:'בית ספר',tornoot:'תורנויות'};
 
 const PNIM_URL='https://docs.google.com/spreadsheets/d/1I7vQ3DJQAQEt8MOF693r0z_aJ8d-OBoy0rDjms4-i4I/gviz/tq?tqx=out:json&t='+Date.now();
-const BS_URL='https://docs.google.com/spreadsheets/d/1FI-0x8baQ7Ztm0O4oYUbGDAuw2sQ1sHdbHmZlJuwG-0/gviz/tq?tqx=out:json';
+const BS_URL='https://docs.google.com/spreadsheets/d/1FI-0x8baQ7Ztm0O4oYUbGDAuw2sQ1sHdbHmZlJuwG-0/gviz/tq?tqx=out:json&t='+Date.now();
 const COLS_PNIM_SRC=['hada','tzevet-pnim','tet','yod','yoda','yodb','akademia','naale','pnimiyd','kfar'];
 const COLS_BS_SRC=['tzevet-bs','tet','yod','yoda','yodb','bs','kfar'];
 
@@ -452,7 +452,12 @@ let colOn=new Set([...COLS_PNIM_DEF,...COLS_BS_DEF]);
 
 const isMobile=()=>window.innerWidth<=600;
 
-function fd(d){return d.toISOString().slice(0,10);}
+function fd(d){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
 function isT(d){return fd(d)===fd(new Date());}
 function add(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
 const NUM_TO_HEB={1:'א',2:'ב',3:'ג',4:'ד',5:'ה',6:'ו',7:'ז',8:'ח',9:'ט',10:'י',
