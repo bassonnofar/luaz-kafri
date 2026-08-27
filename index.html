@@ -449,7 +449,11 @@ async function loadData(){
 
 let view='week', curDate=new Date();
 let catOn=new Set(Object.keys(ALL_CATS));
-let colOn=new Set([...COLS_PNIM_DEF,...COLS_BS_DEF]);
+// עמודות עם מקור: 'pnim:hada', 'bs:tet' וכו'
+let colOn=new Set([
+  ...COLS_PNIM_DEF.map(c=>'pnim:'+c),
+  ...COLS_BS_DEF.map(c=>'bs:'+c)
+]);
 
 const isMobile=()=>window.innerWidth<=600;
 
@@ -479,7 +483,7 @@ function toHebLetters(d){
 function heb(d){return toHebLetters(d).day;}
 function hebFull(d){return toHebLetters(d).full;}
 
-function vis(){return EVENTS.filter(e=>catOn.has(e.cat)&&colOn.has(e.col));}
+function vis(){return EVENTS.filter(e=>catOn.has(e.cat)&&colOn.has(e.src+':'+e.col));}
 function bd(){const m={};vis().forEach(e=>{if(!m[e.date])m[e.date]=[];m[e.date].push(e);});return m;}
 
 function epHTML(ev){
@@ -649,8 +653,9 @@ function toggleAll(src){
     if(el){const inp=el.querySelector('input');if(inp)inp.checked=!anyOn;el.classList.toggle('on',!anyOn);}
   });
   cols.forEach(c=>{
-    if(anyOn)colOn.delete(c);else colOn.add(c);
-    const el=document.getElementById('col-'+c);
+    const key=src+':'+c;
+    if(anyOn)colOn.delete(key);else colOn.add(key);
+    const el=document.getElementById('col-'+src+'-'+c);
     if(el)el.classList.toggle('on',!anyOn);
   });
   render();
@@ -681,16 +686,18 @@ function toggleAll(src){
 (function(){
   const c=document.getElementById('pnim-cols');
   COLS_PNIM_DEF.forEach(col=>{
-    const sp=document.createElement('span');sp.className='cc on';sp.id='col-'+col;sp.textContent=COL_LABELS[col]||col;
-    sp.onclick=function(){if(colOn.has(col)){colOn.delete(col);sp.classList.remove('on');}else{colOn.add(col);sp.classList.add('on');}render();};
+    const key='pnim:'+col;
+    const sp=document.createElement('span');sp.className='cc on';sp.id='col-pnim-'+col;sp.textContent=COL_LABELS[col]||col;
+    sp.onclick=function(){if(colOn.has(key)){colOn.delete(key);sp.classList.remove('on');}else{colOn.add(key);sp.classList.add('on');}render();};
     c.appendChild(sp);
   });
 })();
 (function(){
   const c=document.getElementById('bs-cols');
   COLS_BS_DEF.forEach(col=>{
-    const sp=document.createElement('span');sp.className='cc on';sp.id='col-'+col;sp.textContent=COL_LABELS[col]||col;
-    sp.onclick=function(){if(colOn.has(col)){colOn.delete(col);sp.classList.remove('on');}else{colOn.add(col);sp.classList.add('on');}render();};
+    const key='bs:'+col;
+    const sp=document.createElement('span');sp.className='cc on';sp.id='col-bs-'+col;sp.textContent=COL_LABELS[col]||col;
+    sp.onclick=function(){if(colOn.has(key)){colOn.delete(key);sp.classList.remove('on');}else{colOn.add(key);sp.classList.add('on');}render();};
     c.appendChild(sp);
   });
 })();
