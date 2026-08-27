@@ -155,13 +155,6 @@ body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;direction:rtl;background:#f4
   </div>
   <div class="sp"></div>
   <button class="today-btn" onclick="goToday()">היום</button>
-  <div style="position:relative;display:inline-block">
-    <button class="today-btn" onclick="toggleExportMenu()" id="export-btn" style="border-color:#1565c0;color:#1565c0">⬇ ייצוא</button>
-    <div id="export-menu" style="display:none;position:absolute;left:0;top:110%;background:white;border:1px solid #c8e0c8;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.12);min-width:160px;z-index:100;overflow:hidden">
-      <button onclick="exportPDF()" style="display:block;width:100%;padding:10px 14px;border:none;background:white;text-align:right;cursor:pointer;font-size:12px;font-family:inherit;color:#1a2e1a;border-bottom:1px solid #e0eee0">🖨️ הדפסה / PDF</button>
-      <button onclick="exportCSV()" style="display:block;width:100%;padding:10px 14px;border:none;background:white;text-align:right;cursor:pointer;font-size:12px;font-family:inherit;color:#1a2e1a">📊 ייצוא Excel / CSV</button>
-    </div>
-  </div>
 </div>
 
 <div class="filters">
@@ -430,65 +423,6 @@ function parseSheetRows(rows, src){
   return evs;
 }
 
-
-function toggleExportMenu(){
-  const m=document.getElementById('export-menu');
-  m.style.display=m.style.display==='none'?'block':'none';
-}
-document.addEventListener('click',function(e){
-  const btn=document.getElementById('export-btn');
-  const menu=document.getElementById('export-menu');
-  if(btn&&menu&&!btn.contains(e.target)&&!menu.contains(e.target)){
-    menu.style.display='none';
-  }
-});
-
-function exportPDF(){
-  document.getElementById('export-menu').style.display='none';
-  const style=document.createElement('style');
-  style.id='print-style';
-  style.textContent=`
-    @media print {
-      .ctrl,.filters,.demo-bar { display:none!important; }
-      .hdr { box-shadow:none!important; }
-      body { background:white!important; }
-      .cal { padding:0!important; }
-      @page { margin:1cm; }
-    }
-  `;
-  document.head.appendChild(style);
-  window.print();
-  setTimeout(()=>{
-    const s=document.getElementById('print-style');
-    if(s)s.remove();
-  },1000);
-}
-
-function exportCSV(){
-  document.getElementById('export-menu').style.display='none';
-  const evs=vis();
-  if(!evs.length){alert('אין אירועים לייצוא עם הפילטרים הנוכחיים');return;}
-  const rows=[['תאריך','יום','כותרת','שעה','מקור','קטגוריה','עמודה']];
-  evs.forEach(ev=>{
-    const d=new Date(ev.date+'T12:00:00');
-    const dayName=DAY_NAMES[d.getDay()];
-    const src=ev.src==='pnim'?'פנימייה':'בית ספר';
-    const catLbl=ev.src==='pnim'?CATS_PNIM[ev.cat]?.lbl:CATS_BS[ev.cat]?.lbl||'';
-    const colLbl=COL_LABELS[ev.col]||ev.col;
-    rows.push([ev.date,dayName,ev.title,ev.time||'',src,catLbl||'',colLbl]);
-  });
-  // BOM for Hebrew Excel support
-  const bom='﻿';
-  const csv=bom+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('
-');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download='luaz-kafri.csv';
-  document.body.appendChild(a);a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
 
 async function loadData(){
   const calEl=document.getElementById('cal');
