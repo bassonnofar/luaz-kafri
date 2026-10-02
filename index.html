@@ -414,7 +414,7 @@ function parseSheetRows(rows, src){
       // קטגוריה: קודם לפי תא ספציפי, אחר כך לפי legend השורה
       const cellCat = row.c[catIdx]?.v ? String(row.c[catIdx].v).trim() : '';
       const catTxt = KNOWN_CATS.includes(cellCat) ? cellCat : rowCatTxt;
-      const cat=detectCatFromText(catTxt,src);
+      const cat=detectCatFromText(catTxt,src)||(src==='pnim'?'in-pnim':'in-bs');
 
       // שעה מתוך הטקסט
       let time=null, title=contentVal;
