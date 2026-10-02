@@ -291,7 +291,8 @@ function parseRows(rows,cols,src){
 function detectCatFromText(txt, src){
   if(!txt) return null;
   const t = txt.trim();
-  if(!t || t==='ללא' || t==='ריק') return null;
+  if(!t || t==='ללא') return null;
+  if(t==='ריק') return src==='pnim'?'in-pnim':'in-bs';
   // פנימייה
   if(t==='פעילות חוץ פנימייה') return 'out-pnim';
   if(t==='פעילות פנים פנימייה') return 'in-pnim';
